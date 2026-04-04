@@ -1,0 +1,14 @@
+{
+  "name": "ssh-ws-proxy",
+  "version": "1.0.0",
+  "description": "SSH WebSocket Proxy for Cloud Run",
+  "main": "proxy3.js",
+  "dependencies": {
+    "crypto": "^1.0.1"
+  },
+  "scripts": {
+    "start": "node proxy3.js"
+  },
+  "author": "WorldSolution",
+  "license": "MIT"
+}
