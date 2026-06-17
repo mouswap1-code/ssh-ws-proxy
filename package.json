@@ -4,7 +4,7 @@
   "description": "SSH WebSocket Proxy for Cloud Run",
   "main": "proxy3.js",
   "dependencies": {
-    "crypto": "^1.0.1"
+    "ws": "^8.14.2"
   },
   "scripts": {
     "start": "node proxy3.js"
