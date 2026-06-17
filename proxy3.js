@@ -1,7 +1,7 @@
-const crypto = require("crypto");
 const net = require('net');
 const fs = require('fs');
 const http = require('http');
+const WebSocket = require('ws');
 
 var dhost = process.env.DHOST || "127.0.0.1";
 var dport = process.env.DPORT || 22;
@@ -28,7 +28,7 @@ function authenticate(user, pass) {
     return true;
 }
 
-// Créer un serveur HTTP pour le health check
+// Serveur HTTP pour le health check
 const httpServer = http.createServer((req, res) => {
     if (req.url === '/') {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -39,21 +39,7 @@ const httpServer = http.createServer((req, res) => {
     res.end('Not Found');
 });
 
-// Gérer les connexions WebSocket ou TCP brut via le même port
-// On utilise l'événement 'upgrade' pour les WebSockets, ou on écoute en TCP brut sur un port séparé
-// Mais Cloud Run ne supporte pas les sockets bruts. Il faut utiliser un proxy WebSocket.
-
-// Solution simple : transformer le tunnel en WebSocket
-// Pour l'instant, on crée un serveur TCP séparé sur un autre port (mais Cloud Run n'expose qu'un seul port)
-// Donc la bonne solution est de faire un proxy WebSocket.
-
-// Pour ce cas, on va garder le serveur TCP mais en faire un serveur WebSocket (nécessite ws)
-// Ici on utilise 'ws' pour créer un serveur WebSocket.
-
-// Je vais réécrire la partie TCP en WebSocket avec authentification.
-
-const WebSocket = require('ws');
-
+// Serveur WebSocket sur /ws
 const wss = new WebSocket.Server({ server: httpServer, path: '/ws' });
 
 wss.on('connection', (ws, req) => {
@@ -72,9 +58,13 @@ wss.on('connection', (ws, req) => {
                 clearTimeout(authTimer);
                 ws.send('AUTH OK');
                 const conn = net.createConnection({ host: dhost, port: dport });
-                conn.on('data', (connData) => ws.send(connData));
+                conn.on('data', (connData) => {
+                    ws.send(connData);
+                });
                 conn.on('error', () => ws.close());
-                ws.on('message', (sockData) => conn.write(sockData));
+                ws.on('message', (sockData) => {
+                    conn.write(sockData);
+                });
                 ws.on('close', () => conn.destroy());
             } else {
                 ws.send('AUTH FAILED');
